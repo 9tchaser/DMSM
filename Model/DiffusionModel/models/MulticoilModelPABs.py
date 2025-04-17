@@ -1,44 +1,47 @@
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
-from .network_helpers import *
+from .NetworkHelpers import *
 import dnnlib.tflib as tflib
-from .Span_tf import SPAN
-span_model = SPAN(2, 2, upscale=1, feature_channels=48)
-class SSDiffRecon_Model_Multicoil():
-    
+from .LHAN_Model import LHAN
+LHAN_Model = LHAN(2, 2, upscale=1, feature_channels=48)
+class SSDiffRecon_Model_Multicoil:
     def __init__(self):
         tflib.init_tf()
         self.Diff_Network = None
         self.Mapper = None
+        self.latent_pos = get_embeddings(16, 32, name="ltnt_emb")
         self.load_networks()
-        self.latent_pos = get_embeddings(16, 32, name = "ltnt_emb")
-        
 
     def load_networks(self):
-        kwargs = dict()
-        kwargs['components_num'] = 16
-        kwargs['latent_size'] = 32
-        kwargs["dlatent_size"] = 32
-        self.Mapper = tflib.Network("Mapper", dlatent_broadcast = 12, func_name=globals()["Mapper"],**kwargs)
-        self.Diff_Network = tflib.Network("DiffModel_network", func_name = globals()["DiffModel"])
+        kwargs = {
+            "components_num": 16,
+            "latent_size": 32,
+            "dlatent_size": 32,
+            "dlatent_broadcast": 12,
+        }
+        self.Mapper = tflib.Network(
+            "Mapper", func_name=globals()["Mapper"], **kwargs
+        )
+        self.Diff_Network = tflib.Network(
+            "DiffModel_network", func_name=globals()["DiffModel"]
+        )
 
     def get_trainable_variables(self):
         vars = []
-        mapper = 1
-        diff = 1
-        if diff == 1:
-            for var in self.Diff_Network.trainables.values():
-                vars.append(var)
-        if mapper == 1:
-            for var in self.Mapper.trainables.values():
-                vars.append(var)
+        if self.Diff_Network:
+            vars.extend(self.Diff_Network.trainables.values())
+        if self.Mapper:
+            vars.extend(self.Mapper.trainables.values())
         return vars
 
- 
     def model(self, us_im, noisy_sample, label, time, mask, coil_map):
-        dlatent = self.Mapper.get_output_for(time,label,self.latent_pos,None)
-        denoised_im, _ = self.Diff_Network.get_output_for(noisy_sample,us_im,dlatent, mask, coil_map, label)
+        dlatent = self.Mapper.get_output_for(
+            time, label, self.latent_pos, None
+        )
+        denoised_im, _ = self.Diff_Network.get_output_for(
+            noisy_sample, us_im, dlatent, mask, coil_map, label
+        )
         return denoised_im
 
 
@@ -318,10 +321,10 @@ def DiffModel(
                 x, dlatents, att_map1, att_vars = synthesizer_layer(x, dlatents, layer_idx = idx,
                     dim = dim, kernel = 3, att_vars = att_vars, transformer=True)
             idx +=1 
-            #with tf.variable_scope("512x512-second-cov-block-" + str(i)):
-            #    x, dlatents, att_map2, att_vars = synthesizer_layer(x, dlatents, layer_idx = idx,
-            #        dim = dim, kernel = 3, att_vars = att_vars, transformer=False)
-            #idx +=1 
+            with tf.variable_scope("512x512-second-cov-block-" + str(i)):
+                x, dlatents, att_map2, att_vars = synthesizer_layer(x, dlatents, layer_idx = idx,
+                    dim = dim, kernel = 3, att_vars = att_vars, transformer=False)
+            idx +=1 
             x = (x + t) 
             t = x  
             with tf.variable_scope("data-cons-layer-first" + str(i)):
@@ -332,7 +335,7 @@ def DiffModel(
                 x = apply_bias_act(conv2d_layer(x, dim = dim, kernel = 1), act=act) 
             x = (x + t)  
             att_maps.append(att_map1)
-            #att_maps.append(att_map2)
+            att_maps.append(att_map2)
         return x, dlatents, att_maps, att_vars, idx
         
 
@@ -354,8 +357,8 @@ def DiffModel(
     x = noisy_sample
 
     x = tf.transpose(x, [0, 2, 3, 1])
-    # add SPAN attention block
-    x = span_model(x)
+    # add LHAN block
+    x = LHAN_Model(x)
     x = tf.transpose(x, [0, 3, 1, 2])
 
     # main layers

@@ -9,7 +9,7 @@ from diffusion.diffusion_tf.diffusion_utils import get_beta_schedule, GaussianDi
 from diffusion.diffusion_tf.models.model_singlecoil import SSDiffRecon_Model
 from diffusion.diffusion_tf.gpu_utils import gpu_tpu_utils_ixi as gpu_utils
 from diffusion.diffusion_tf.gpu_utils import datasets
-import partial_masks
+import Dual_SDiff.PartialMask as PartialMask
 
 
 class Model(gpu_utils.Model):
@@ -41,12 +41,12 @@ class Model(gpu_utils.Model):
    
     t = tf.random_uniform([B], 0, self.diffusion.num_timesteps, dtype=tf.int32)
 
-    mask_1, mask_2 = partial_masks.partial_mask_creator(mask, alpha) 
-    cond_mask, res_mask = partial_masks.partial_mask_creator(mask, 0.95)
+    mask_1, mask_2 = PartialMask.partial_mask_creator(mask, alpha) 
+    cond_mask, res_mask = PartialMask.partial_mask_creator(mask, 0.95)
     
     #new_us_im = partial_masks.us_im_creator_ixi(new_mask=new_mask, us_im=us_im)
-    new_us_im_1 = partial_masks.us_im_creator_ixi(new_mask=mask_1, us_im=us_im)
-    new_us_im_2 = partial_masks.us_im_creator_ixi(new_mask=mask_2, us_im=us_im)
+    new_us_im_1 = PartialMask.us_im_creator_ixi(new_mask=mask_1, us_im=us_im)
+    new_us_im_2 = PartialMask.us_im_creator_ixi(new_mask=mask_2, us_im=us_im)
     new_us_im_3 = us_im # 原图
     #x_start = new_us_im
     x_start_1 = new_us_im_1

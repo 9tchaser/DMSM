@@ -106,9 +106,7 @@ class fastMRI_dataset:
     buffer_mb=256,       # Read buffer size (megabytes).
     batch_size=1,
   ):
-    """Adapted from https://github.com/NVlabs/stylegan2/blob/master/training/dataset.py.
-    Use StyleGAN2 dataset_tool.py to generate tf record files.
-    """
+    
     self.tfr_file_us_image  = tfr_file_us_image
     self.tfr_file_mask      = tfr_file_mask
     self.tfr_file_coil_map  = tfr_file_coil_map
@@ -160,44 +158,6 @@ class fastMRI_dataset:
     dset = dset.batch(self.batch_size, drop_remainder=True)
     dset = dset.prefetch(tf.data.experimental.AUTOTUNE)
     return dset
-  
-  """ def val_input_fn(self):
-    # Build TF expressions.
-    dset_us = tf.data.TFRecordDataset(self.tfr_file_us_image,compression_type='', buffer_size=self.buffer_mb<<20)
-    self.name = 'us_im'
-    dset_us = dset_us.map(self._parse_tfrecord_tf_3, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dset_us = dset_us.take(self.max_images)
-
-    dset_mask = tf.data.TFRecordDataset(self.tfr_file_mask,compression_type='', buffer_size=self.buffer_mb<<20)
-    self.name = 'mask'
-    dset_mask = dset_mask.map(self._parse_tfrecord_tf_3, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dset_mask = dset_mask.take(self.max_images)
-
-    dset_coil_map = tf.data.TFRecordDataset(self.tfr_file_coil_map,compression_type='', buffer_size=self.buffer_mb<<20)
-    self.name = 'coil_map'
-    dset_coil_map = dset_coil_map.map(self._parse_tfrecord_tf_4, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dset_coil_map = dset_coil_map.take(self.max_images)
-
-
-
-    _np_labels = np.load(self.label_file)
-    _tf_labels_var = tf.convert_to_tensor(_np_labels, name = "label")
-    _tf_labels_dataset = tf.data.Dataset.from_tensor_slices(_tf_labels_var)    
-    _tf_labels_dataset = _tf_labels_dataset.map(lambda x: {'label':x})
-    _tf_labels_dataset = _tf_labels_dataset.take(self.max_images)
-
-    dset = tf.data.TFRecordDataset.zip((dset_us, dset_mask, dset_coil_map))
-    dset = dset.map(lambda x,y,z : dict(us_im=x["us_im"], mask=y["mask"],  coil_map=z["coil_map"]))
-
-
-    dset = tf.data.TFRecordDataset.zip((dset,_tf_labels_dataset))
-    dset = dset.repeat()
-    # Shuffle and prefetch
-   # dset = dset.shuffle(50000)
-    dset = dset.batch(self.batch_size, drop_remainder=True)
-    dset = dset.prefetch(tf.data.experimental.AUTOTUNE)
-    return dset
- """
 
   def eval_input_fn(self):
     dset_us = tf.data.TFRecordDataset(self.tfr_file_us_image,compression_type='', buffer_size=self.buffer_mb<<20)
@@ -270,10 +230,6 @@ def get_dataset(name, *, batch_size, phase='train'):
       print("none of the phases is selected")
   elif name == 'fastMRI':
     if phase == 'train':
-      #return fastMRI_dataset("/home/yuxuan/SSDiffRecon/data/datasets/tfrecords-datasets/fastmri_mixed_us/-r09.tfrecords", 
-      #                        "/home/yuxuan/SSDiffRecon/data/datasets/tfrecords-datasets/fastmri_mixed_train_mask/train/train.tfrecords", 
-      #                        "/home/yuxuan/SSDiffRecon/data/datasets/tfrecords-datasets/fastmri_mixed_train_coil_maps/train/train.tfrecords", 
-      #                        "/home/yuxuan/SSDiffRecon/data/datasets/tfrecords-datasets/fastmri_mixed_us/-rxx.labels", batch_size=batch_size)
       return fastMRI_dataset("/home/yuxuan/Dual_SDiff/data/datasets/tfrecords_dataset/fastMRI/ssdiff/ssdiff_train_us/-r09.tfrecords", 
                               "/home/yuxuan/Dual_SDiff/data/datasets/tfrecords_dataset/fastMRI/ssdiff/ssdiff_train_mask/train.tfrecords", 
                               "/home/yuxuan/Dual_SDiff/data/datasets/tfrecords_dataset/fastMRI/ssdiff/ssdiff_train_coil_maps/train.tfrecords", 

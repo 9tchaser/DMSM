@@ -4,10 +4,10 @@ import argparse
 import numpy as np
 import tensorflow.compat.v1 as tf
 from diffusion.diffusion_tf.diffusion_utils import get_beta_schedule, GaussianDiffusion2
-from diffusion.diffusion_tf.models.model_multicoil_SPAB import SSDiffRecon_Model_Multicoil
+from diffusion.diffusion_tf.models.MulticoilModelPABs import SSDiffRecon_Model_Multicoil
 from diffusion.diffusion_tf.gpu_utils import gpu_tpu_utils_fastmri as gpu_utils
 from diffusion.diffusion_tf.gpu_utils import datasets
-import partial_masks
+import Dual_SDiff.PartialMask as PartialMask
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.disable_v2_behavior()
@@ -35,13 +35,13 @@ class Model(gpu_utils.Model):
         B = us_im.shape[0]
         t = tf.random_uniform([B], 0, self.diffusion.num_timesteps, dtype=tf.int32)
 
-        mask_1, mask_2 = partial_masks.partial_mask_creator(mask, alpha)
-        cond_mask, res_mask = partial_masks.partial_mask_creator(mask, 0.95)
+        mask_1, mask_2 = PartialMask.partial_mask_creator(mask, alpha)
+        cond_mask, res_mask = PartialMask.partial_mask_creator(mask, 0.95)
 
-        new_us_im_1 = partial_masks.us_im_creator_fastmri(
+        new_us_im_1 = PartialMask.us_im_creator_fastmri(
             new_mask=mask_1, us_im=us_im, coil_map=coil_map
         )
-        new_us_im_2 = partial_masks.us_im_creator_fastmri(
+        new_us_im_2 = PartialMask.us_im_creator_fastmri(
             new_mask=mask_2, us_im=us_im, coil_map=coil_map
         )
 

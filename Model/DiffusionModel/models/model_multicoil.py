@@ -1,7 +1,7 @@
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
-from .network_helpers import *
+from .NetworkHelpers import *
 import dnnlib.tflib as tflib
 
 class SSDiffRecon_Model_Multicoil():

@@ -3,10 +3,10 @@ tf.disable_v2_behavior()
 
 # import sys
 # sys.path.append("..") # Adds higher directory to python modules path.
-from .network_helpers import *
+from .NetworkHelpers import *
 import dnnlib.tflib as tflib
-
-
+from .LHAN_Model import LHAN
+LHAN_Model = LHAN(2, 2, upscale=1, feature_channels=48)
 class SSDiffRecon_Model():
 
     def __init__(self):
@@ -324,6 +324,12 @@ def DiffModel(
     att_vars = {"centroid_assignments": None}
 
     x = noisy_sample
+    x = tf.transpose(x, [0, 2, 3, 1])
+    # add LHAN block
+    x = LHAN_Model(x)
+    x = tf.transpose(x, [0, 3, 1, 2])
+
+    # main layers
     idx = 0
     resolution = 8
     x, dlatents, _att_maps, att_vars, idx = block(x, dlatents,  att_vars = att_vars, idx=idx)
